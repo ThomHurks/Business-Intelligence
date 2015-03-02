@@ -6,7 +6,6 @@ rng(0,'twister');
 % D is the input table, provided by the teachers, it's inside A1.mat.
 load('A1.mat');
 predictors = table2array(D(:,1:3));
-[input_length,~] = size(D);
 labels = table2array(D(:,4));
 % Train-Validation-Test partition
 % 80% is in train-val, 20% is final test set
@@ -21,7 +20,7 @@ TTPartition = cvpartition(train_validation_data, 'KFold', 10);
 % Final-Train partition for final training on whole (80%) TT data.
 FTPartition = cvpartition(train_validation_data,'resubstitution');
 % Find out which amount of minimum leafs gives the lowest loss.
-leafs = linspace(1,800,100); % alternative is logspace(1,3,100);
+leafs = linspace(1,500,200); % alternative is logspace(1,3,100);
 leaf_tests = numel(leafs);
 losses = zeros(leaf_tests,1);
 for n=1:leaf_tests
@@ -50,7 +49,8 @@ true_positives = confusion(2,2);
 true_negatives = confusion(1,1);
 false_positives = confusion(1,2);
 false_negatives = confusion(2,1);
-overall_success_rate = (true_positives + true_negatives)/(input_length);
+overall_success_rate = (true_positives + true_negatives)/...
+     (true_positives + true_negatives + false_positives + false_negatives);
 error = 1 - overall_success_rate;
 precision = true_positives/(true_positives + false_positives);
 recall = true_positives/(true_positives + false_negatives);
