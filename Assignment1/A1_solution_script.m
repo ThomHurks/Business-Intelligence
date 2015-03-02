@@ -55,4 +55,6 @@ error = 1 - overall_success_rate;
 precision = true_positives/(true_positives + false_positives);
 recall = true_positives/(true_positives + false_negatives);
 F1 = 2*(precision * recall)/(precision + recall);
+% Shows how important TL, TT and VAL predictors are in the tree.
+importances = best_tree.predictorImportance;
 % Done!
