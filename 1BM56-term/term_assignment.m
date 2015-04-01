@@ -65,7 +65,11 @@ bdata = vertcat(set_subscribed, balanced_unsubscribed);
 % Shuffle our rows 
 bdata = bdata(randperm(size(bdata,1)),:);
 
-% Data set for Neural Networks 
+% Data set for Neural Networks
+nninput = bdata(:,1:16);
+nnlabels = bdata(:,17);
+ 
+nnet = patternnet(17, 'trainlm');
 
 % Data set for Fuzzy Inference Model 
 
