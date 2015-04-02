@@ -65,12 +65,35 @@ bdata = vertcat(set_subscribed, balanced_unsubscribed);
 % Shuffle our rows 
 bdata = bdata(randperm(size(bdata,1)),:);
 
+% Q7 repare the data set, so that it is in the proper form for the neural network and fuzzy inference modeling.
+
 % Data set for Neural Networks
-nninput = bdata(:,1:16);
-nnlabels = bdata(:,17);
- 
-nnet = patternnet(17, 'trainlm');
+
+% TODO: Convert any non-numerical inputs to some numeric input
+
+nnInputs = table2array(bdata(:,1:16));
+nnInputs = table2array(bdata(:,1)); % this works for testing because col-1 only has numeric
+nnLabels = table2array(bdata(:,17)); % we need to convert yes/no to 1/0
+
+% Create ranges for different set sizes: train, validate, test
+nncount = size(nnInputs,1);
+trainRange = 1:(nncount*0.6); % 60%
+validateRange = (floor(nncount*0.6)+1):floor(nncount*0.8); % 20%
+testRange = (floor(nncount*0.8)+1):floor(nncount*1.0); % 20%
+
+nnet = patternnet([17], 'trainlm');
+nnet.divideFcn = 'divideind';
+nnet.divideParam.trainInd = trainRange;
+nnet.divideParam.valInd = validateRange;
+nnet.divideParam.testInd = testRange;
+
+% train the neural network and get the output for the test set
+[net, tr] = train(nnet, nnInputs, nnInputs);
+output = nnet(nnInputs(:,testRange));
 
 % Data set for Fuzzy Inference Model 
+
+% TODO %
+
 
 
