@@ -65,15 +65,42 @@ bdata = vertcat(set_subscribed, balanced_unsubscribed);
 % Shuffle our rows 
 bdata = bdata(randperm(size(bdata,1)),:);
 
-% Q7 repare the data set, so that it is in the proper form for the neural network and fuzzy inference modeling.
+% Normalize the data into vectors
 
+ndata = cell(size(bdata));
+
+% loop over every column
+for i=1:17 
+    % get all the row data for the column:c
+    cdata = bdata(:,i);
+    
+    % TODO: alleen hebben we voor elke NaN value een entry in onze vector
+    % deze kunnen we met het cleanen eruit halen dan zal het goed gaan
+    udata = table2array(unique(cdata));
+    usize = size(udata,1);
+    
+    % loop over every row (size 1) in the column
+    for c=1:size(cdata,1)
+        % create empty zeros vector
+        vector = zeros(usize,1);
+        % find index for value in the zero vector
+        vindex = find(udata == cdata{c,1});
+        % set this index 1
+        vector(vindex) = 1;
+        % store this vector in our new normalized data table
+        % row:c and column:i 
+        % vec2str = strtrim(cellstr(num2str(vector)));
+        ndata(c,i) = { vector };
+    end;
+end;
+
+% Q7 repare the data set, so that it is in the proper form for the neural network and fuzzy inference modeling.
 % Data set for Neural Networks
 
-% TODO: Convert any non-numerical inputs to some numeric input
-
-nnInputs = table2array(bdata(:,1:16));
-nnInputs = table2array(bdata(:,1)); % this works for testing because col-1 only has numeric
-nnLabels = table2array(bdata(:,17)); % we need to convert yes/no to 1/0
+% TODO: alles staat nu dus in een CellTable 
+% Hoe gaan we deze genormalizeerde vector data in onze NN gebruiken?
+nnInputs = ndata(:,1:16);
+nnLabels = ndata(:,17); % we need to convert yes/no to 1/0
 
 % Create ranges for different set sizes: train, validate, test
 nncount = size(nnInputs,1);
@@ -81,14 +108,15 @@ trainRange = 1:(nncount*0.6); % 60%
 validateRange = (floor(nncount*0.6)+1):floor(nncount*0.8); % 20%
 testRange = (floor(nncount*0.8)+1):floor(nncount*1.0); % 20%
 
-nnet = patternnet([17], 'trainlm');
+% Setup our Neural Network
+nnet = patternnet([100 20], 'trainlm');
 nnet.divideFcn = 'divideind';
 nnet.divideParam.trainInd = trainRange;
 nnet.divideParam.valInd = validateRange;
 nnet.divideParam.testInd = testRange;
 
 % train the neural network and get the output for the test set
-[net, tr] = train(nnet, nnInputs, nnInputs);
+[net, tr] = train(nnet, nnInputs, nnLabels);
 output = nnet(nnInputs(:,testRange));
 
 % Data set for Fuzzy Inference Model 
