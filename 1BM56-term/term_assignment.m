@@ -105,6 +105,47 @@ net.divideParam.testInd = (train_val_size + 1):size(balanced_data, 1);
 results = net(nn_Inputs(train_record.testInd));
 nn_perf = perform(net, nn_Labels(train_record.testInd), results);
 
-% Data set for Fuzzy Inference Model 
+% Data set for Fuzzy Inference Model
 
-% TODO %
+% age(1), balance(6), pdays:number of contacts(14)
+
+fis_data_input = normalized_data(:,[1 2]);
+% fis_data_input = table2array(data(:,[1 6 14]));
+fis_data_labels = table2array(data(:,17)) == '"yes"';
+fis_data_train = fis_data_input(:,:);
+fis_data_train = horzcat(fis_data_input, fis_data_labels);
+fis_data_train = fis_data_train(1:100,:);
+
+fis_linear = genfis1(fis_data_train, 2, 'gbellmf', 'linear');
+fis = anfis(fis_data_train, fis_linear, size(fis_data_train));
+gensurf(fis);
+
+fis_linear = addvar(fis_linear,'input','x',[18 95]); % the actual column range 
+fis_linear = addmf(fis_linear,'input',1,'young adult','gaussmf',[18 28]);
+fis_linear = addmf(fis_linear,'input',1,'adult','gaussmf',[29 40]);
+fis_linear = addmf(fis_linear,'input',1,'older adult','gaussmf',[41 60]);
+fis_linear = addmf(fis_linear,'input',1,'old','gaussmf',[61 95]);
+
+fis_linear = addvar(fis_linear,'input','y',[-8019 102127]);
+fis_linear = addmf(fis_linear,'input',2,'very poor','gaussmf',[-8019 -5000]);
+fis_linear = addmf(fis_linear,'input',2,'poor','gaussmf',[-5000 0]);
+fis_linear = addmf(fis_linear,'input',2,'moderate','gaussmf',[1 5000]);
+fis_linear = addmf(fis_linear,'input',2,'rich','gaussmf',[5001 10000]);
+fis_linear = addmf(fis_linear,'input',2,'very rich','gaussmf',[10001 102127]);
+
+% input error als ik deze column (column 14 uit data variable) wil meenemen
+%fis_linear = addvar(fis_linear,'input','contact',[0 871]);
+%fis_linear = addmf(fis_linear,'input',3, 'days','gaussmf',[0 7]);
+%fis_linear = addmf(fis_linear,'input',3, 'weeks','gaussmf',[8 30]);
+%fis_linear = addmf(fis_linear,'input',3, 'months','gaussmf',[31 90]);
+%fis_linear = addmf(fis_linear,'input',3, 'many months','gaussmf',[90 365]);
+%fis_linear = addmf(fis_linear,'input',3, 'years','gaussmf',[365 871]);
+
+fis_linear = addvar(fis_linear,'output','z', [0 1]);
+fis_linear = addmf(fis_linear,'output',1,'no','gaussmf',[0 0]);
+fis_linear = addmf(fis_linear,'output',1,'yes','gaussmf',[1 1]);
+
+plotmf(fis_linear, 'input', 1)
+plotmf(fis_linear, 'input', 2)
+% Error..
+% plotmf(fis_linear, 'ouput', 1)
