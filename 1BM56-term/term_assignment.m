@@ -1,5 +1,5 @@
 % Authors: Thom Hurks and Vincent de Vos
-% Group 27, 1BM56 Business Intelligence, <date>, 2015.
+% Group 27, 1BM56 Business Intelligence, april 6, 2015.
 
 % For reproducibility:
 rng(0,'twister');
@@ -27,16 +27,17 @@ for i=1:17
     % Count NaN's
     if isnumeric(curArray)
         missing_columns(i,1) =  {sum(isnan(curArray))};
+        missing_columns(i,2) = {length(find(curArray==-1))};
     end;
     if iscategorical(curArray)
         % Count "unknown" entries.
-        missing_columns(i,2) = {length(find(curArray=='"unknown"'))};
+        missing_columns(i,3) = {length(find(curArray=='"unknown"'))};
         % Count <undefined> entries
-        missing_columns(i,3) =  {sum(isundefined(curArray))};
+        missing_columns(i,4) =  {sum(isundefined(curArray))};
     end;
     % Count the total of missing values
     missing_values = { NaN, '', '<undefined>', '"unknown"' };
-    missing_columns(i,4) = {sum(ismissing(data(:,i), missing_values))};
+    missing_columns(i,5) = {sum(ismissing(data(:,i), missing_values))};
 end;
 
 % Get the value ranges in each column, so they can be evaluated.
@@ -53,20 +54,24 @@ end;
 % Subscribed 30% vs Unsubscribed 70%
 
 % Divide original data set in set of subscribed and unsubscribed data
-set_subscribed = data(find(table2array(data(:,17)) == '"yes"'),:);
-set_unsubscribed = data(find(table2array(data(:,17)) == '"no"'),:);
+set_subscribed = data(table2array(data(:,17)) == '"yes"',:);
+set_unsubscribed = data(table2array(data(:,17)) == '"no"',:);
 
+% Get nr of rows (dimension is 1) in matrix.
 balanced_size_subscribed = size(set_subscribed,1);
+% Calculate number of unsubscribed samples to get desired 70/30 ratio.
 balanced_size_unsubscribed = (70*balanced_size_subscribed)/30;
-balanced_unsubscribed = datasample(set_unsubscribed, balanced_size_unsubscribed);
-
-% Create a the balanced dataset where 30% is subscribed and 70% is unsubscribed data
+% Sample k observations uniformly at random, without replacement.
+balanced_unsubscribed = datasample(set_unsubscribed, balanced_size_unsubscribed,...
+                                   'Replace', false);
+% Concatenate the subscribed and sampled unsubcribed matrices to create
+% a 70/30 balanced dataset.
 bdata = vertcat(set_subscribed, balanced_unsubscribed);
-% Shuffle our rows 
+% Shuffle the rows of the matrix by doing a random permutation from
+% 1 to the row count of the matrix.
 bdata = bdata(randperm(size(bdata,1)),:);
 
 % Normalize the data into vectors
-
 ndata = cell(size(bdata));
 
 % loop over every column
@@ -94,7 +99,8 @@ for i=1:17
     end;
 end;
 
-% Q7 repare the data set, so that it is in the proper form for the neural network and fuzzy inference modeling.
+% Q7 repare the data set, so that it is in the proper form for the neural
+% network and fuzzy inference modeling.
 % Data set for Neural Networks
 
 % TODO: alles staat nu dus in een CellTable 
