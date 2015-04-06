@@ -111,11 +111,13 @@ net.divideParam.testInd = (train_val_size + 1):size(balanced_data, 1);
 display('Finished training neural network');
 
 % Show the trained neural network.
-% view(random_net);
-% view(indices_net);
+view(net);
 % Test the performance of the neural networks using the final test set.
 results = net(nn_Inputs(train_record.testInd));
 nn_perf = perform(net, nn_Labels(train_record.testInd), results);
+% Save the neural network to disk, in a file called "<name>_<timestamp>.m"
+timestamp = strcat(datestr(clock,'yyyy-mm-dd-HHMM'),'m',datestr(clock,'ss'),'s');
+save(strcat('027_neural_net_', timestamp), 'net');
 
 % Data set for Fuzzy Inference Model 
 
