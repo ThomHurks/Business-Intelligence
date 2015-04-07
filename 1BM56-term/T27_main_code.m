@@ -120,8 +120,6 @@ timestamp = strcat(datestr(clock,'yyyy-mm-dd-HHMM'),'m',datestr(clock,'ss'),'s')
 save(strcat('T27_neural_net_', timestamp), 'net', 'train_record');
 
 % Data set for Fuzzy Inference Model
-
-<<<<<<< HEAD:1BM56-term/term_assignment.m
 % age(1), balance(6), pdays:number of contacts(14)
 
 fis_data_input = normalized_data(:,[1 2]);
@@ -164,8 +162,5 @@ plotmf(fis_linear, 'input', 1)
 plotmf(fis_linear, 'input', 2)
 % Error..
 % plotmf(fis_linear, 'ouput', 1)
-=======
-% TODO %
 
 display('Done!');
->>>>>>> origin/master:1BM56-term/T27_main_code.m
