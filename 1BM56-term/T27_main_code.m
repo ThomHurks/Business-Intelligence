@@ -133,7 +133,7 @@ fis_linear = genfis1(fis_data_train, 2, 'gbellmf', 'linear');
 fis = anfis(fis_data_train, fis_linear, size(fis_data_train));
 gensurf(fis);
 
-fis_linear = addvar(fis_linear,'input','x',[18 95]); % the actual column range 
+fis_linear = addvar(fis_linear,'input','x',[18 95]); % the actual column range
 fis_linear = addmf(fis_linear,'input',1,'young adult','gaussmf',[18 28]);
 fis_linear = addmf(fis_linear,'input',1,'adult','gaussmf',[29 40]);
 fis_linear = addmf(fis_linear,'input',1,'older adult','gaussmf',[41 60]);
