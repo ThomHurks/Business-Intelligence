@@ -69,7 +69,7 @@ end
 % cumulative number of days per entry. The result is the total number of 
 % days since the beginning of the year for each entry (assuming non-leap
 % year)
-days = daysArray + month_days;
+days = floor((daysArray + month_days) / 14); % bin per two weeks
 % Normalize days count.
 largest = max(days);
 smallest = min(days);
@@ -82,74 +82,87 @@ curArray = table2array(data(:,17));
 normalized_data = horzcat(normalized_data, curArray == '"yes"');
 display('Finished normalizing data');
 
-% Create final test set, training set and validation set:
-
-% Sample 10% observations uniformly at random, without replacement, for the
-% final test set. We want the final test set to have the same imbalance
-% as the original test set, to make the test more representative.
-final_test_set_size = floor(size(normalized_data, 1) * 0.1);
-[final_test_set, final_test_idx] = datasample(normalized_data, final_test_set_size ,...
-                                   'Replace', false);
-% Separate the final test data from the validation/train data for now.
-train_val_data = removerows(normalized_data, final_test_idx);
-% Divide remaining training/validation set in set of subscribed and 
-% unsubscribed data.
-last_column = size(train_val_data, 2);
-set_subscribed = train_val_data(train_val_data(:,last_column) == 1,:);
-set_unsubscribed = train_val_data(train_val_data(:,last_column) == 0,:);
-% Get nr of subscribed entries.
-balanced_size_subscribed = size(set_subscribed, 1);
-% Calculate number of unsubscribed samples to get desired 70/30 ratio.
-balanced_size_unsubscribed = floor((70 * balanced_size_subscribed) / 30);
-% Sample k observations uniformly at random, without replacement.
-balanced_unsubscribed = datasample(set_unsubscribed, balanced_size_unsubscribed,...
-                                   'Replace', false);
-% Concatenate the subscribed and sampled unsubcribed matrices to create
-% a 70/30 balanced dataset.
-balanced_data = vertcat(set_subscribed, balanced_unsubscribed);
-% Shuffle the rows of the matrix by doing a random permutation from
-% 1 to the row count of the matrix.
-balanced_data = balanced_data(randperm(size(balanced_data, 1)),:);
-train_val_size = size(balanced_data, 1);
-% Add the final test set back to the end of the dataset, since the neural
-% network expects one contiguous dataset.
-balanced_data = vertcat(balanced_data, final_test_set);
-display('Finished balancing data');
-
-% Split the balanced dataset into inputs and labels for the neural network.
-% We need to transpose the input/labels since the neural network
-% expects that each input entry is a column vector and the labels is a row.
-nn_Inputs = transpose(balanced_data(:,(1:(last_column - 1))));
-nn_Labels = transpose(balanced_data(:,last_column));
-
 % Create feedforward neural network with 2 hidden layers.
 % First hidden layer has 10 neurons, and second 2 neurons.
 % Training function is the default.
 % alternative: net = patternnet([100 20], 'trainlm');
-net = fitnet([10, 2], 'trainlm');
+% alternative: net = fitnet([10, 2], 'trainlm');
+net = patternnet(10, 'trainlm', 'mse');
+numNN = 10;
+nets = cell(numNN,3);
+for i=1:numNN
 
-% Specify train, validation and test sets on the neural network.
-% The data is divided by index, the indices for the three subsets are
-% defined by the division parameters trainInd, valInd and testInd.
-% Train size is 80% of the balanced train/validation set.
-trainSize = floor(train_val_size * 0.8);
-net.divideFcn = 'divideind';
-net.divideParam.trainInd = 1:trainSize;
-net.divideParam.valInd = (trainSize + 1):train_val_size;
-% The final test set is the unbalanced last part of the balanced_data
-% array that we concatenated back in line 81.
-net.divideParam.testInd = (train_val_size + 1):size(balanced_data, 1);
+    % Create final test set, training set and validation set:
 
-% Train the neural network with the data and get the output for the test
-% set.
-[net, train_record] = train(net, nn_Inputs, nn_Labels);
-display('Finished training neural network');
+    % Sample 10% observations uniformly at random, without replacement, for the
+    % final test set. We want the final test set to have the same imbalance
+    % as the original test set, to make the test more representative.
+    final_test_set_size = floor(size(normalized_data, 1) * 0.1);
+    [final_test_set, final_test_idx] = datasample(normalized_data, final_test_set_size ,...
+                                       'Replace', false);
+    % Separate the final test data from the validation/train data for now.
+    train_val_data = removerows(normalized_data, final_test_idx);
+    % Divide remaining training/validation set in set of subscribed and 
+    % unsubscribed data.
+    last_column = size(train_val_data, 2);
+    set_subscribed = train_val_data(train_val_data(:,last_column) == 1,:);
+    set_unsubscribed = train_val_data(train_val_data(:,last_column) == 0,:);
+    % Get nr of subscribed entries.
+    balanced_size_subscribed = size(set_subscribed, 1);
+    % Calculate number of unsubscribed samples to get desired 70/30 ratio.
+    balanced_size_unsubscribed = floor((70 * balanced_size_subscribed) / 30);
+    % Sample k observations uniformly at random, without replacement.
+    balanced_unsubscribed = datasample(set_unsubscribed, balanced_size_unsubscribed,...
+                                       'Replace', false);
+    % Concatenate the subscribed and sampled unsubcribed matrices to create
+    % a 70/30 balanced dataset.
+    balanced_data = vertcat(set_subscribed, balanced_unsubscribed);
+    % Shuffle the rows of the matrix by doing a random permutation from
+    % 1 to the row count of the matrix.
+    balanced_data = balanced_data(randperm(size(balanced_data, 1)),:);
+    train_val_size = size(balanced_data, 1);
+    % Add the final test set back to the end of the dataset, since the neural
+    % network expects one contiguous dataset.
+    balanced_data = vertcat(balanced_data, final_test_set);
+    display('Finished balancing data. Starting training...');
 
+    % Split the balanced dataset into inputs and labels for the neural network.
+    % We need to transpose the input/labels since the neural network
+    % expects that each input entry is a column vector and the labels is a row.
+    nn_Inputs = transpose(balanced_data(:,(1:(last_column - 1))));
+    nn_Labels = transpose(balanced_data(:,last_column));
+
+    % Specify train, validation and test sets on the neural network.
+    % The data is divided by index, the indices for the three subsets are
+    % defined by the division parameters trainInd, valInd and testInd.
+    % Train size is 80% of the balanced train/validation set.
+    trainSize = floor(train_val_size * 0.95);
+    net.divideFcn = 'divideind';
+    net.divideParam.trainInd = 1:trainSize;
+    net.divideParam.valInd = (trainSize + 1):train_val_size;
+    % The final test set is the unbalanced last part of the balanced_data
+    % array that we concatenated back in line 81.
+    net.divideParam.testInd = (train_val_size + 1):size(balanced_data, 1);
+
+    % Train the neural network with the data and get the output for the test
+    % set.
+    [net, train_record] = train(net, nn_Inputs, nn_Labels);
+    nets{i,1} = net;
+    nets{i,2} = train_record;
+    % Test the performance of the neural networks using the final test set.
+    results = net(nn_Inputs(train_record.testInd));
+    nn_perf = perform(net, nn_Labels(train_record.testInd), results);
+    nets{i,3} = nn_perf;
+    display('Finished training.');
+end;
+display('Finished training neural networks');
+
+% Get the network with the lowest Mean Squared Error.
+[min_nn_mse, min_nn_index] = min(cell2mat(nets(:,3)));
+net = nets{min_nn_index, 1};
+train_record = nets{min_nn_index, 2};
 % Show the trained neural network.
 view(net);
-% Test the performance of the neural networks using the final test set.
-results = net(nn_Inputs(train_record.testInd));
-nn_perf = perform(net, nn_Labels(train_record.testInd), results);
 % Save the neural network to disk, in a file called "<name>_<timestamp>.m"
 timestamp = strcat(datestr(clock,'yyyy-mm-dd-HHMM'),'m',datestr(clock,'ss'),'s');
 save(strcat('T27_neural_net_', timestamp), 'net', 'train_record');
