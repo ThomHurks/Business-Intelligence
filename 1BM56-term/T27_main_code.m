@@ -102,7 +102,7 @@ net.divideFcn = 'divideind';
 net.divideParam.trainInd = 1:trainSize;
 net.divideParam.valInd = (trainSize + 1):train_val_size;
 % The final test set is the unbalanced last part of the balanced_data
-% array that we concatenated back in line 80.
+% array that we concatenated back in line 81.
 net.divideParam.testInd = (train_val_size + 1):size(balanced_data, 1);
 
 % Train the neural network with the data and get the output for the test
