@@ -85,9 +85,8 @@ display('Finished normalizing data');
 % Create feedforward neural network with 2 hidden layers.
 % First hidden layer has 10 neurons, and second 2 neurons.
 % Training function is the default.
-% alternative: net = patternnet([100 20], 'trainlm');
-% alternative: net = fitnet([10, 2], 'trainlm');
 net = patternnet(10, 'trainlm', 'mse');
+% Alternative: net = patternnet(10, 'trainscg','crossentropy');
 numNN = 10;
 nets = cell(numNN,3);
 for i=1:numNN
@@ -158,7 +157,7 @@ end;
 display('Finished training neural networks');
 
 % Get the network with the lowest Mean Squared Error.
-[min_nn_mse, min_nn_index] = min(cell2mat(nets(:,3)));
+[min_nn_perf, min_nn_index] = min(cell2mat(nets(:,3)));
 net = nets{min_nn_index, 1};
 train_record = nets{min_nn_index, 2};
 % Show the trained neural network.
