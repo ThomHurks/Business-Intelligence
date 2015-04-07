@@ -11,8 +11,10 @@ load('1BM56-term.mat');
 normalized_data = zeros(size(data, 1),0);
 
 % Normalization:
-% Loop over all columns, column 17 (outcome) we do separately.
-for i=1:16
+column_indices=1:16;
+column_indices([10,11]) = [];
+% Loop over all columns, columns 10, 11 (date) and 17 (target) we do separately.
+for i=column_indices
     curArray = table2array(data(:,i));
     % Normalize categorical data by turning them into logical vectors.
     if iscategorical(curArray)
@@ -42,6 +44,39 @@ for i=1:16
         display(strcat('Error normalizing column ', num2str(i)))
     end;
 end;
+% Normalize columns 10 (day) and 11 (month) by converting them into a single 
+% number.
+daysArray = table2array(data(:,10));
+% NaN values for days are replaced by 1.
+daysArray(isnan(daysArray)) = 1;
+monthsArray = table2array(data(:,11));
+% Create arrays of the month strings in data and associated day counts.
+month_names = nominal(['"jan"';'"feb"';'"mar"';'"apr"';'"may"';'"jun"';...
+                       '"jul"';'"aug"';'"sep"';'"okt"';'"nov"';'"dec"']);
+months_nr_days = [31;28;31;30;31;30;31;31;30;31;30;31];
+% Calculate the cumulative number of days of each month, but shifted by
+% one to the left, so for each month we get the minimum passed nr of days.
+months_days_cuml = zeros(12,1);
+for i=2:12
+    months_days_cuml(i) = months_nr_days(i-1) + months_days_cuml(i-1);
+end
+month_days = zeros(size(data,1),1);
+% For each month, get all entries and assign each the cumulative nr of days.
+for i=1:12
+    month_days(ismember(monthsArray, month_names(i)),1) = months_days_cuml(i);
+end
+% Add the days number for all entries to the array that contains the 
+% cumulative number of days per entry. The result is the total number of 
+% days since the beginning of the year for each entry (assuming non-leap
+% year)
+days = daysArray + month_days;
+% Normalize days count.
+largest = max(days);
+smallest = min(days);
+range = largest - smallest;
+days = (days - smallest) / range;
+% Concatenate to the matrix containing the normalized data.
+normalized_data = horzcat(normalized_data, days);
 % Now do the last column (outcome), convert yes/no to 1 and 0 (binary).
 curArray = table2array(data(:,17));
 normalized_data = horzcat(normalized_data, curArray == '"yes"');
